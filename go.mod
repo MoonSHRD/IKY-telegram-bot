@@ -2,9 +2,13 @@ module github.com/MoonSHRD/IKY-telegram-bot
 
 go 1.17
 
+//replace github.com/MoonSHRD/IKY-telegram-bot/artifacts/TGPassport => ./artifacts/TGPassport.go
+
+
 require (
 	github.com/ethereum/go-ethereum v1.10.23
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
+	github.com/MoonSHRD/IKY-telegram-bot/artifacts/TGPassport v0.0.0
 )
 
 require (
