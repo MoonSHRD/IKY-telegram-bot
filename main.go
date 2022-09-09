@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -38,6 +39,9 @@ type user struct {
 var userDatabase = make(map[int64]user)
 
 var msgTemplates = make (map[string] string)
+
+var baseURL = "http://localhost:3000/"
+var tg_id_query = "?user_tg_id="
 
 
 func main() {
@@ -81,7 +85,15 @@ func main() {
 
 						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid,msgTemplates["case0"] )
 						bot.Send(msg)
-						
+
+						tgid := userDatabase[update.Message.From.ID].tgid
+						tgid_string := fmt.Sprint(tgid)
+						link := baseURL + tg_id_query + tgid_string
+						msg = tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid,link)
+						bot.Send(msg)
+
+					//	msg = tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid)
+
 					}
 
 				//logic is that 1 incoming message fro the user equals one status check in database, so each status check ends with the message asking the next question
