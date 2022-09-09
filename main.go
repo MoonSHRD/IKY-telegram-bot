@@ -6,6 +6,7 @@ import (
 	"os"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	//passport "github.com/MoonSHRD/IKY-telegram-bot/artifacts/TGPassport"
 )
 
 var yesNoKeyboard = tgbotapi.NewReplyKeyboard(
