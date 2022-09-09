@@ -125,12 +125,14 @@ func main() {
 // subscribing for Applications events
 func SubscribeForApplications(session *passport.PassportSession, listenChannel chan *passport.PassportPassportApplied) (event.Subscription, error)  {
 	ApplicationsFilter := session.Contract.FilterPassportApplied
-	subscription, err := ApplicationsFilter.WatchPassportApplied(&bind.WatchOpts{
+	
+	subscription, err := ApplicationsFilter(&bind.WatchOpts{
 		Start:   nil, //last block
 		Context: nil,
 	}, listenChannel)
 	if err != nil {
 		return nil, err
 	}
+	
 	return subscription, err
 }
