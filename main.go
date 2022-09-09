@@ -5,7 +5,9 @@ import (
 	"log"
 	"os"
 
-	passport "github.com/MoonSHRD/IKY-telegram-bot/artifacts/TGPassport"
+	//passport "github.com/MoonSHRD/IKY-telegram-bot/artifacts/TGPassport"
+	passport "IKY-telegram-bot/artifacts/TGPassport"
+
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
 	//	"github.com/ethereum/go-ethereum/common"
