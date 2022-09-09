@@ -27,7 +27,7 @@ var bot, error1 = tgbotapi.NewBotAPI(string(tgApiKey))
 //type containing all the info about user input
 type user struct {
 	tgid                int64
-	status            int64
+	dialog_status            int64
 	//exportTokenName   string
 	//exportTokenSymbol string
 	//exportTokenSupply uint64
@@ -49,6 +49,7 @@ func main() {
 
 	msgTemplates["hello"] = "Hey, this bot is attaching personal wallets to telegram user & collective wallets to chat id"
 	msgTemplates["case0"] = "Go to link and attach your tg_id to your metamask wallet"
+	msgTemplates["case1"] = "Awaiting for verification"
 
 	bot, err = tgbotapi.NewBotAPI(string(tgApiKey))
 	if err != nil {
@@ -74,13 +75,13 @@ func main() {
 				bot.Send(msg)
 			} else {
 
-				switch userDatabase[update.Message.From.ID].status {
+				switch userDatabase[update.Message.From.ID].dialog_status {
 
 				//first check for user status, (for a new user status 0 is set automatically), then user reply for the first bot message is logged to a database as name AND user status is updated
 				case 0:
 					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
 						//updateDb.exportTokenName = update.Message.Text
-						updateDb.status = 1
+						updateDb.dialog_status = 1
 						userDatabase[update.Message.From.ID] = updateDb
 
 						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid,msgTemplates["case0"] )
@@ -100,10 +101,10 @@ func main() {
 				case 1:
 					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
 						//updateDb.exportTokenSymbol = update.Message.Text
-						updateDb.status = 2
+						updateDb.dialog_status = 2
 						userDatabase[update.Message.From.ID] = updateDb
 					}
-					msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["hello"])
+					msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["case1"])
 					bot.Send(msg)
 
 
