@@ -5,8 +5,12 @@ import (
 	"log"
 	"os"
 
+	passport "github.com/MoonSHRD/IKY-telegram-bot/artifacts/TGPassport"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+
+	//	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/event"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	//passport "github.com/MoonSHRD/IKY-telegram-bot/artifacts/TGPassport"
 )
 
 var yesNoKeyboard = tgbotapi.NewReplyKeyboard(
@@ -113,4 +117,18 @@ func main() {
 			}
 		}
 	}
+}
+
+
+// subscribing for Applications events
+func SubscribeForApplications(session *passport.PassportSession, listenChannel chan *passport.PassportPassportApplied) (event.Subscription, error)  {
+	ApplicationsFilter := session.Contract.FilterPassportApplied
+	subscription, err := ApplicationsFilter.WatchPassportApplied(&bind.WatchOpts{
+		Start:   nil, //last block
+		Context: nil,
+	}, listenChannel)
+	if err != nil {
+		return nil, err
+	}
+	return subscription, err
 }
