@@ -11,12 +11,12 @@ import (
 	passport "github.com/MoonSHRD/IKY-telegram-bot/artifacts/TGPassport"
 	//passport "IKY-telegram-bot/artifacts/TGPassport"
 
+	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/event"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -46,6 +46,12 @@ type user struct {
 	//exportTokenType   uint64
 	//tokenTypeString   string
 }
+
+type event_iterator = *passport.PassportPassportAppliedIterator
+// event from blockchain
+type event_bc = *passport.PassportPassportApplied
+// subscription for events
+type event_subscribtion = ethereum.Subscription
 
 //main database, key (int64) is telegram user id
 var userDatabase = make(map[int64]user)
@@ -80,7 +86,7 @@ func main() {
 
 		// Connecting to network
 	//  client, err := ethclient.Dial(os.Getenv("GATEWAY"))	// for global env config
-	client, err := ethclient.Dial(myenv["GATEWAY"]) // load from local .env file
+	client, err := ethclient.Dial(myenv["GATEWAY_RINKEBY"]) // load from local .env file
 	if err != nil {
 		log.Fatalf("could not connect to Ethereum gateway: %v\n", err)
 	}
@@ -133,7 +139,11 @@ func main() {
 	// Check retriving events of CashOut request
 
 	var ch = make(chan *passport.PassportPassportApplied)
-	subscription, err := SubscribeForApplications(session,ch)
+	//var event_subscribtion subscription
+
+
+	
+	
 	
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
@@ -191,6 +201,32 @@ func main() {
 			}
 		}
 	}
+
+
+	subscription, err := SubscribeForApplications(session,ch)
+
+	EventLoop:
+	for {
+		select {
+		case <-ctx.Done():
+			{
+			subscription.Unsubscribe();
+			break EventLoop
+			}
+	case eventResult:= <-ch:
+		{
+			fmt.Println("/n")
+			fmt.Println("User tg_id:", eventResult.ApplyerTg)
+			fmt.Println("User wallet address:", eventResult.WalletAddress)
+
+		}
+
+		}
+}
+
+
+
+
 }
 
 func loadEnv() {
@@ -202,7 +238,7 @@ func loadEnv() {
 
 
 // subscribing for Applications events
-func SubscribeForApplications(session *passport.PassportSession, listenChannel chan *passport.PassportPassportApplied) (event.Subscription, error)  {
+func SubscribeForApplications(session *passport.PassportSession, listenChannel chan *passport.PassportPassportApplied) (event_subscribtion, error)  {
 	ApplicationsFilter := session.Contract.FilterPassportApplied
 	
 	//single event entity
@@ -215,7 +251,13 @@ func SubscribeForApplications(session *passport.PassportSession, listenChannel c
 		return nil, err
 	}
 	
-	subscription := subscriptionIterator.Event
+
+	//subscriptionIterator.Event = listenChannel
+	listenChannel <- subscriptionIterator.Event
+
+	//subscription := subscriptionIterator.Event
+	subscription := subscriptionIterator.Sub
+	
 
 	//return subscriptionIterator, err
 	return subscription, subscriptionIterator.Error()

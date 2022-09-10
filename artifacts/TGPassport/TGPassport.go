@@ -693,8 +693,8 @@ type PassportPassportAppliedIterator struct {
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
 
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	Logs chan types.Log        // Log channel receiving the found contract events
+	Sub  ethereum.Subscription // Subscription for errors, completion and termination
 	done bool                  // Whether the subscription completed delivering logs
 	fail error                 // Occurred error to stop iteration
 }
@@ -710,7 +710,7 @@ func (it *PassportPassportAppliedIterator) Next() bool {
 	// If the iterator completed, deliver directly whatever's available
 	if it.done {
 		select {
-		case log := <-it.logs:
+		case log := <-it.Logs:
 			it.Event = new(PassportPassportApplied)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
@@ -725,7 +725,7 @@ func (it *PassportPassportAppliedIterator) Next() bool {
 	}
 	// Iterator still in progress, wait for either a data or an error event
 	select {
-	case log := <-it.logs:
+	case log := <-it.Logs:
 		it.Event = new(PassportPassportApplied)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
@@ -734,7 +734,7 @@ func (it *PassportPassportAppliedIterator) Next() bool {
 		it.Event.Raw = log
 		return true
 
-	case err := <-it.sub.Err():
+	case err := <-it.Sub.Err():
 		it.done = true
 		it.fail = err
 		return it.Next()
@@ -749,7 +749,7 @@ func (it *PassportPassportAppliedIterator) Error() error {
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
 func (it *PassportPassportAppliedIterator) Close() error {
-	it.sub.Unsubscribe()
+	it.Sub.Unsubscribe()
 	return nil
 }
 
@@ -769,7 +769,7 @@ func (_Passport *PassportFilterer) FilterPassportApplied(opts *bind.FilterOpts) 
 	if err != nil {
 		return nil, err
 	}
-	return &PassportPassportAppliedIterator{contract: _Passport.contract, event: "passportApplied", logs: logs, sub: sub}, nil
+	return &PassportPassportAppliedIterator{contract: _Passport.contract, event: "passportApplied", Logs: logs, Sub: sub}, nil
 }
 
 // WatchPassportApplied is a free log subscription operation binding the contract event 0x2578b8463fa9088621234109e3537776ec83fa33de185759f3a0616bfefe8e30.
