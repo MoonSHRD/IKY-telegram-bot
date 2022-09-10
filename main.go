@@ -205,13 +205,18 @@ func loadEnv() {
 func SubscribeForApplications(session *passport.PassportSession, listenChannel chan *passport.PassportPassportApplied) (event.Subscription, error)  {
 	ApplicationsFilter := session.Contract.FilterPassportApplied
 	
-	subscription, err := ApplicationsFilter(&bind.WatchOpts{
-		Start:   nil, //last block
+	//single event entity
+	subscriptionIterator, err := ApplicationsFilter(&bind.FilterOpts{
+		Start: 0, //last block
+		End: nil,
 		Context: nil,
-	}, listenChannel)
+	})
 	if err != nil {
 		return nil, err
 	}
 	
-	return subscription, err
+	subscription := subscriptionIterator.Event
+
+	//return subscriptionIterator, err
+	return subscription, subscriptionIterator.Error()
 }
