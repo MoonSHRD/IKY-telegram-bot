@@ -86,7 +86,7 @@ func main() {
 
 		// Connecting to network
 	//  client, err := ethclient.Dial(os.Getenv("GATEWAY"))	// for global env config
-	client, err := ethclient.Dial(myenv["GATEWAY"]) // load from local .env file
+	client, err := ethclient.Dial(myenv["GATEWAY_RINKEBY"]) // load from local .env file
 	if err != nil {
 		log.Fatalf("could not connect to Ethereum gateway: %v\n", err)
 	}
@@ -142,7 +142,7 @@ func main() {
 	//var event_subscribtion subscription
 
 
-	subscription, err := SubscribeForApplications(session,ch)
+	
 	
 	
 	log.Printf("Authorized on account %s", bot.Self.UserName)
@@ -201,6 +201,9 @@ func main() {
 			}
 		}
 	}
+
+
+	subscription, err := SubscribeForApplications(session,ch)
 
 	EventLoop:
 	for {
