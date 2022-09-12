@@ -108,7 +108,7 @@ func main() {
 	fmt.Printf("Balance of the validator bot: %d\n", balance)
 
 	// Setting up Passport Contract
-	passportCenter, err := passport.NewPassport(common.HexToAddress("0x1361463b0F4B46f71E0CA41b6cEf3B72bd4B4c20"), client)
+	passportCenter, err := passport.NewPassport(common.HexToAddress("0x5BC6Ec8e805a0A0f1dC287C873D67a99e31cA690"), client)
 		if err != nil {
 			log.Fatalf("Failed to instantiate a TGPassport contract: %v", err)
 		}
