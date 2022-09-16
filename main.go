@@ -13,10 +13,10 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 
-	"github.com/ethereum/go-ethereum/common"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -108,7 +108,7 @@ func main() {
 	fmt.Printf("Balance of the validator bot: %d\n", balance)
 
 	// Setting up Passport Contract
-	passportCenter, err := passport.NewPassport(common.HexToAddress("0x5BC6Ec8e805a0A0f1dC287C873D67a99e31cA690"), client)
+	passportCenter, err := passport.NewPassport(common.HexToAddress("0x8AdD4988bE0f273b9b6A980EA2Ce8891F897caF6"), client)
 		if err != nil {
 			log.Fatalf("Failed to instantiate a TGPassport contract: %v", err)
 		}
