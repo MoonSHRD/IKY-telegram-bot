@@ -1,5 +1,5 @@
 # IKY-telegram-bot
-Verifier bot for IKY
+Verifier bot for IKY (https://github.com/MoonSHRD/IKY)
 
 
 This bot is comfortable telegram bot, which allow users to tether their personal wallets to their tg_id, using metamask
