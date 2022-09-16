@@ -11,11 +11,11 @@ import (
 	passport "github.com/MoonSHRD/IKY-telegram-bot/artifacts/TGPassport"
 	//passport "IKY-telegram-bot/artifacts/TGPassport"
 
-	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/event"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -28,8 +28,7 @@ var yesNoKeyboard = tgbotapi.NewReplyKeyboard(
 
 var mainKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("Verify personal wallet"),
-		tgbotapi.NewKeyboardButton("Verify collective wallet")),
+	tgbotapi.NewKeyboardButton("Verify personal wallet")),
 )
 
 //to operate the bot, put a text file containing key for your bot acquired from telegram "botfather" to the same directory with this file
@@ -39,22 +38,20 @@ var bot, error1 = tgbotapi.NewBotAPI(string(tgApiKey))
 //type containing all the info about user input
 type user struct {
 	tgid                int64
-	dialog_status            int64
-	//exportTokenName   string
-	//exportTokenSymbol string
-	//exportTokenSupply uint64
-	//exportTokenType   uint64
-	//tokenTypeString   string
+	dialog_status       int64
 }
 
-type event_iterator = *passport.PassportPassportAppliedIterator
-// event from blockchain
-type event_bc = *passport.PassportPassportApplied
-// subscription for events
-type event_subscribtion = ethereum.Subscription
+type event_iterator = *passport.PassportPassportAppliedIterator // For filter  @TODO: consider removing
 
-//main database, key (int64) is telegram user id
-var userDatabase = make(map[int64]user)
+// event we got from blockchain 
+type event_bc = *passport.PassportPassportApplied
+
+// channel to get this event from blockchain
+var ch = make(chan *passport.PassportPassportApplied)
+
+
+//main database for dialogs, key (int64) is telegram user id
+var userDatabase = make(map[int64]user)  // consider to change in persistend data storage?
 
 var msgTemplates = make (map[string] string)
 
@@ -63,8 +60,8 @@ var tg_id_query = "?user_tg_id="
 
 var myenv map[string]string
 
+// file with settings for enviroment
 const envLoc = ".env"
-
 
 
 
@@ -77,14 +74,16 @@ func main() {
 
 	msgTemplates["hello"] = "Hey, this bot is attaching personal wallets to telegram user & collective wallets to chat id"
 	msgTemplates["case0"] = "Go to link and attach your tg_id to your metamask wallet"
-	msgTemplates["case1"] = "Awaiting for verification"
+	msgTemplates["await"] = "Awaiting for verification"
+	msgTemplates["case1"] = "Case1 message"
 
 	bot, err = tgbotapi.NewBotAPI(string(tgApiKey))
 	if err != nil {
 		log.Panic(err)
 	}
 
-		// Connecting to network
+
+	// Connecting to blockchain network
 	//  client, err := ethclient.Dial(os.Getenv("GATEWAY"))	// for global env config
 	client, err := ethclient.Dial(myenv["GATEWAY_RINKEBY"]) // load from local .env file
 	if err != nil {
@@ -130,21 +129,8 @@ func main() {
 			},
 		}
 	
-	log.Printf("session with passport centr initialized")
+	log.Printf("session with passport center initialized")
 
-	/*
-	   Events
-	*/
-
-	// Check retriving events of CashOut request
-
-	var ch = make(chan *passport.PassportPassportApplied)
-	//var event_subscribtion subscription
-
-
-	
-	
-	
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
 	u := tgbotapi.NewUpdate(0)
@@ -169,10 +155,7 @@ func main() {
 				//first check for user status, (for a new user status 0 is set automatically), then user reply for the first bot message is logged to a database as name AND user status is updated
 				case 0:
 					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
-						//updateDb.exportTokenName = update.Message.Text
-						updateDb.dialog_status = 1
-						userDatabase[update.Message.From.ID] = updateDb
-
+						
 						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid,msgTemplates["case0"] )
 						bot.Send(msg)
 
@@ -182,19 +165,50 @@ func main() {
 						msg = tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid,link)
 						bot.Send(msg)
 
-					//	msg = tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid)
+						subscription, err := SubscribeForApplications(session,ch)
+						if err != nil {
+							log.Fatal(err)
+						}
 
-					}
+						EventLoop:
+						for {
+							select {
+							case <-ctx.Done():
+								{
+								subscription.Unsubscribe();
+								break EventLoop
+								}
+						case eventResult:= <-ch:
+							{
+								fmt.Println("/n")
+								fmt.Println("User tg_id:", eventResult.ApplyerTg)
+								fmt.Println("User wallet address:", eventResult.WalletAddress)
+					
+							}
+					
+							}
+						}
 
-				//logic is that 1 incoming message fro the user equals one status check in database, so each status check ends with the message asking the next question
-				case 1:
-					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
-						//updateDb.exportTokenSymbol = update.Message.Text
-						updateDb.dialog_status = 2
+
+						updateDb.dialog_status = 1
 						userDatabase[update.Message.From.ID] = updateDb
 					}
-					msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["case1"])
-					bot.Send(msg)
+
+				
+				case 1:
+					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
+						//updateDb.dialog_status = 2
+						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["case1"])
+						bot.Send(msg)
+
+
+
+
+
+
+						userDatabase[update.Message.From.ID] = updateDb
+					}
+
 
 
 				}
@@ -203,31 +217,11 @@ func main() {
 	}
 
 
-	subscription, err := SubscribeForApplications(session,ch)
-
-	EventLoop:
-	for {
-		select {
-		case <-ctx.Done():
-			{
-			subscription.Unsubscribe();
-			break EventLoop
-			}
-	case eventResult:= <-ch:
-		{
-			fmt.Println("/n")
-			fmt.Println("User tg_id:", eventResult.ApplyerTg)
-			fmt.Println("User wallet address:", eventResult.WalletAddress)
-
-		}
-
-		}
-}
+	
 
 
 
-
-}
+} // end of main func
 
 func loadEnv() {
 	var err error
@@ -237,14 +231,29 @@ func loadEnv() {
 
 
 
+// subscribing for Applications events. We use watchers without fast-forwarding 
+func SubscribeForApplications(session *passport.PassportSession, listenChannel chan<- *passport.PassportPassportApplied) (event.Subscription, error)  {
+	subscription, err := session.Contract.WatchPassportApplied(&bind.WatchOpts{
+		Start: nil, //last block
+		Context: nil, // nil = no timeout
+	}, listenChannel,
+)
+	if err != nil {
+		return nil, err
+	}
+	return subscription, err
+}
+
+
+/*	@NOTE: Filter is suitable for *fast-forwarding* event's in some time diapazon, but not really suit if we want to *watch* for new incoming events
 // subscribing for Applications events
-func SubscribeForApplications(session *passport.PassportSession, listenChannel chan *passport.PassportPassportApplied) (event_subscribtion, error)  {
+func SubscribeForApplications(session *passport.PassportSession, listenChannel chan<- *passport.PassportPassportApplied) (event_subscribtion, error)  {
 	ApplicationsFilter := session.Contract.FilterPassportApplied
 	
 	//single event entity
 	subscriptionIterator, err := ApplicationsFilter(&bind.FilterOpts{
-		Start: 0, //last block
-		End: nil,
+		Start: 0, // genesis
+		End: nil, // last
 		Context: nil,
 	})
 	if err != nil {
@@ -262,3 +271,4 @@ func SubscribeForApplications(session *passport.PassportSession, listenChannel c
 	//return subscriptionIterator, err
 	return subscription, subscriptionIterator.Error()
 }
+*/
