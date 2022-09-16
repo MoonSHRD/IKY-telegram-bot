@@ -64,7 +64,6 @@ var myenv map[string]string
 const envLoc = ".env"
 
 
-
 func main() {
 
 
@@ -169,27 +168,22 @@ func main() {
 						if err != nil {
 							log.Fatal(err)
 						}
-
 						EventLoop:
 						for {
 							select {
-							case <-ctx.Done():
+						 case <-ctx.Done():
 								{
 								subscription.Unsubscribe();
 								break EventLoop
 								}
-						case eventResult:= <-ch:
+						 case eventResult:= <-ch:
 							{
 								fmt.Println("/n")
 								fmt.Println("User tg_id:", eventResult.ApplyerTg)
 								fmt.Println("User wallet address:", eventResult.WalletAddress)
-					
 							}
-					
-							}
+									}
 						}
-
-
 						updateDb.dialog_status = 1
 						userDatabase[update.Message.From.ID] = updateDb
 					}
@@ -201,11 +195,7 @@ func main() {
 						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["case1"])
 						bot.Send(msg)
 
-
-
-
-
-
+						// TODO: Finish job
 						userDatabase[update.Message.From.ID] = updateDb
 					}
 
@@ -216,13 +206,10 @@ func main() {
 		}
 	}
 
-
-	
-
-
-
 } // end of main func
 
+
+// load enviroment variables from .env file
 func loadEnv() {
 	var err error
 	if myenv, err = godotenv.Read(envLoc); err != nil {
@@ -230,8 +217,7 @@ func loadEnv() {
 	}}
 
 
-
-// subscribing for Applications events. We use watchers without fast-forwarding 
+// subscribing for Applications events. We use watchers without fast-forwarding past events
 func SubscribeForApplications(session *passport.PassportSession, listenChannel chan<- *passport.PassportPassportApplied) (event.Subscription, error)  {
 	subscription, err := session.Contract.WatchPassportApplied(&bind.WatchOpts{
 		Start: nil, //last block
@@ -243,32 +229,3 @@ func SubscribeForApplications(session *passport.PassportSession, listenChannel c
 	}
 	return subscription, err
 }
-
-
-/*	@NOTE: Filter is suitable for *fast-forwarding* event's in some time diapazon, but not really suit if we want to *watch* for new incoming events
-// subscribing for Applications events
-func SubscribeForApplications(session *passport.PassportSession, listenChannel chan<- *passport.PassportPassportApplied) (event_subscribtion, error)  {
-	ApplicationsFilter := session.Contract.FilterPassportApplied
-	
-	//single event entity
-	subscriptionIterator, err := ApplicationsFilter(&bind.FilterOpts{
-		Start: 0, // genesis
-		End: nil, // last
-		Context: nil,
-	})
-	if err != nil {
-		return nil, err
-	}
-	
-
-	//subscriptionIterator.Event = listenChannel
-	listenChannel <- subscriptionIterator.Event
-
-	//subscription := subscriptionIterator.Event
-	subscription := subscriptionIterator.Sub
-	
-
-	//return subscriptionIterator, err
-	return subscription, subscriptionIterator.Error()
-}
-*/
