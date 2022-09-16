@@ -85,7 +85,7 @@ func main() {
 
 	// Connecting to blockchain network
 	//  client, err := ethclient.Dial(os.Getenv("GATEWAY"))	// for global env config
-	client, err := ethclient.Dial(myenv["GATEWAY_RINKEBY"]) // load from local .env file
+	client, err := ethclient.Dial(myenv["GATEWAY_RINKEBY_WS"]) // load from local .env file
 	if err != nil {
 		log.Fatalf("could not connect to Ethereum gateway: %v\n", err)
 	}
