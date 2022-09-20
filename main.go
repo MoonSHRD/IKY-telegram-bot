@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+
+	//"math"
+	//"math/big"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -38,6 +41,7 @@ var bot, error1 = tgbotapi.NewBotAPI(string(tgApiKey))
 //type containing all the info about user input
 type user struct {
 	tgid                int64
+	tg_username			string
 	dialog_status       int64
 }
 
@@ -57,6 +61,7 @@ var msgTemplates = make (map[string] string)
 
 var baseURL = "http://localhost:3000/"
 var tg_id_query = "?user_tg_id="
+var tg_username_query = "&user_tg_name="
 
 var myenv map[string]string
 
@@ -106,7 +111,7 @@ func main() {
 	fmt.Printf("Balance of the validator bot: %d\n", balance)
 
 	// Setting up Passport Contract
-	passportCenter, err := passport.NewPassport(common.HexToAddress("0x8AdD4988bE0f273b9b6A980EA2Ce8891F897caF6"), client)
+	passportCenter, err := passport.NewPassport(common.HexToAddress("0x7A6C799D6548324539d2Da641bd5661aE11A845E"), client)
 		if err != nil {
 			log.Fatalf("Failed to instantiate a TGPassport contract: %v", err)
 		}
@@ -143,7 +148,7 @@ func main() {
 		if update.Message != nil {
 			if _, ok := userDatabase[update.Message.From.ID]; !ok {
 
-				userDatabase[update.Message.From.ID] = user{update.Message.Chat.ID, 0,}
+				userDatabase[update.Message.From.ID] = user{update.Message.Chat.ID, update.Message.Chat.UserName, 0}
 				msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["hello"])
 				msg.ReplyMarkup = mainKeyboard
 				bot.Send(msg)
@@ -159,8 +164,10 @@ func main() {
 						bot.Send(msg)
 
 						tgid := userDatabase[update.Message.From.ID].tgid
+						user_name := userDatabase[update.Message.From.ID].tg_username
+						fmt.Println(user_name)
 						tgid_string := fmt.Sprint(tgid)
-						link := baseURL + tg_id_query + tgid_string
+						link := baseURL + tg_id_query + tgid_string + tg_username_query + "@" + user_name
 						msg = tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid,link)
 						bot.Send(msg)
 
@@ -178,11 +185,16 @@ func main() {
 								}
 						 case eventResult:= <-ch:
 							{
-								fmt.Println("/n")
-								fmt.Println("User tg_id:", eventResult.ApplyerTg)
+								fmt.Println("/ln")
+								fmt.Println("User tg_id:", eventResult.ApplyerTg) 
+								event_tgid := eventResult.ApplyerTg.Int64()
 								fmt.Println("User wallet address:", eventResult.WalletAddress)
-							}
+									if event_tgid == tgid {
+										msg = tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid," your application have been recived" + eventResult.ApplyerTg.String())
+										bot.Send(msg)
 									}
+							}
+							}
 						}
 						updateDb.dialog_status = 1
 						userDatabase[update.Message.From.ID] = updateDb
