@@ -192,6 +192,8 @@ func main() {
 									if event_tgid == tgid {
 										msg = tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid," your application have been recived" + eventResult.ApplyerTg.String())
 										bot.Send(msg)
+										subscription.Unsubscribe();
+										break EventLoop
 									}
 							}
 							}
