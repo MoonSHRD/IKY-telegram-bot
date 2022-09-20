@@ -281,6 +281,7 @@ func DeclinePassport(auth *bind.TransactOpts, pc *passport.Passport,user_address
 			Nonce: nil,
 			Signer: auth.Signer,
 			Value: nil,
+		//	GasPrice: nil,
 			GasFeeCap: nil,
 			GasTipCap: nil,
 			GasLimit: 0,
