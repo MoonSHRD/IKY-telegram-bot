@@ -103,6 +103,8 @@ func main() {
 
 	// Creating an auth transactor
 	auth := bind.NewKeyedTransactor(privateKey)
+	//auth2:= bind.NewKeyedTransactorWithChainID(privateKey,big.NewInt(4))
+	//NewKeyedTransactorWithChainID
 
 	// check calls
 	// check balance
@@ -185,13 +187,14 @@ func main() {
 								}
 						 case eventResult:= <-ch:
 							{
-								fmt.Println("/ln")
+								//fmt.Println("\n")
 								fmt.Println("User tg_id:", eventResult.ApplyerTg) 
 								event_tgid := eventResult.ApplyerTg.Int64()
 								fmt.Println("User wallet address:", eventResult.WalletAddress)
 									if event_tgid == tgid {
 										msg = tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid," your application have been recived" + eventResult.ApplyerTg.String())
 										bot.Send(msg)
+										DeclinePassport(auth,passportCenter,eventResult.WalletAddress)	// TODO: IMPORTANT -- CHANGE IT TO APPROVE PASSPORT BEFORE PRODUCTION
 										subscription.Unsubscribe();
 										break EventLoop
 									}
@@ -242,4 +245,54 @@ func SubscribeForApplications(session *passport.PassportSession, listenChannel c
 		return nil, err
 	}
 	return subscription, err
+}
+
+
+func ApprovePassport(auth *bind.TransactOpts, pc *passport.Passport,user_address common.Address)		{
+	
+	tx_to_approve, err := pc.ApprovePassport(
+		&bind.TransactOpts{
+			From: auth.From,
+			Nonce: nil,
+			Signer: auth.Signer,
+			Value: nil,
+			GasFeeCap: nil,
+			GasTipCap: nil,
+			GasLimit: 0,
+			Context: context.Background(),
+		}, user_address,
+	)
+
+	if err != nil {
+		log.Println("cant send approval reques to contract: ")
+		log.Print(err)
+	}
+	
+	fmt.Printf("transaction for APPROVAL passport sent! Please wait for tx %s to be confirmed. \n", tx_to_approve.Hash().Hex())
+
+}
+
+
+func DeclinePassport(auth *bind.TransactOpts, pc *passport.Passport,user_address common.Address)		{
+	
+	tx_to_approve, err := pc.DeclinePassport(
+		&bind.TransactOpts{
+			From: auth.From,
+			Nonce: nil,
+			Signer: auth.Signer,
+			Value: nil,
+			GasFeeCap: nil,
+			GasTipCap: nil,
+			GasLimit: 0,
+			Context: context.Background(),
+		}, user_address,
+	)
+
+	if err != nil {
+		log.Println("cant send DECLINING reques to contract: ")
+		log.Print(err)
+	}
+	
+	fmt.Printf("transaction for DECLINING passport sent! Please wait for tx %s to be confirmed. \n", tx_to_approve.Hash().Hex())
+
 }
