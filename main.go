@@ -170,8 +170,8 @@ func main() {
 						msg = tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, link)
 						bot.Send(msg)
 
-						//subscription, err := SubscribeForApplications(session, ch)
-						subscription, err := SubscribeForApplicationsIndexed(session, ch_index,tgid_array)
+						//subscription, err := SubscribeForApplications(session, ch)   //  this is ordinary subscription to NORMAL event
+						subscription, err := SubscribeForApplicationsIndexed(session, ch_index,tgid_array)	// this is subscription to INDEXED event. This mean we can pass what exactly value of argument we want to see
 
 						if err != nil {
 							log.Fatal(err)
@@ -186,6 +186,19 @@ func main() {
 								}
 							case eventResult := <-ch_index:
 								{
+									fmt.Println("User tg_id:", eventResult.ApplyerTg)
+									fmt.Println("User wallet address:", eventResult.WalletAddress)
+										applyer_tg_string := strconv.FormatInt(eventResult.ApplyerTg,10)
+										msg = tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, " your application have been recived "+applyer_tg_string)
+										bot.Send(msg)
+										ApprovePassport(auth, passportCenter, eventResult.WalletAddress) 
+										subscription.Unsubscribe()
+										break EventLoop
+								}
+							/*  Use next snippet to work with regular events (when args are NOT INDEXED)
+							*	In this approach we parsing results from event and awaiting for values to match
+							case eventResult := <-ch:
+								{
 									//fmt.Println("\n")
 									fmt.Println("User tg_id:", eventResult.ApplyerTg)
 									event_tgid := eventResult.ApplyerTg
@@ -194,12 +207,13 @@ func main() {
 										applyer_tg_string := strconv.FormatInt(eventResult.ApplyerTg,10)
 										msg = tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, " your application have been recived "+applyer_tg_string)
 										bot.Send(msg)
-										DeclinePassport(auth, passportCenter, eventResult.WalletAddress) // TODO: IMPORTANT -- CHANGE IT TO APPROVE PASSPORT BEFORE PRODUCTION
+										ApprovePassport(auth, passportCenter, eventResult.WalletAddress)
 										subscription.Unsubscribe()
 										break EventLoop
 									}
-								}
+								} */
 							}
+							
 						}
 						updateDb.dialog_status = 1
 						userDatabase[update.Message.From.ID] = updateDb
