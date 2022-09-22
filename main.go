@@ -165,11 +165,14 @@ func main() {
 						user_name := userDatabase[update.Message.From.ID].tg_username
 						fmt.Println(user_name)
 						tgid_string := fmt.Sprint(tgid)
+						tgid_big := big.NewInt(tgid)
+						tgid_array := make([]*big.Int,0)
+						tgid_array[0] = tgid_big
 						link := baseURL + tg_id_query + tgid_string + tg_username_query + "@" + user_name
 						msg = tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, link)
 						bot.Send(msg)
 
-						subscription, err := SubscribeForApplications(session, ch)
+						subscription, err := SubscribeForApplications(session, ch,tgid_array)
 						if err != nil {
 							log.Fatal(err)
 						}
@@ -227,11 +230,12 @@ func loadEnv() {
 }
 
 // subscribing for Applications events. We use watchers without fast-forwarding past events
-func SubscribeForApplications(session *passport.PassportSession, listenChannel chan<- *passport.PassportPassportApplied) (event.Subscription, error) {
+func SubscribeForApplications(session *passport.PassportSession, listenChannel chan<- *passport.PassportPassportApplied, applierTGID []*big.Int) (event.Subscription, error) {
 	subscription, err := session.Contract.WatchPassportApplied(&bind.WatchOpts{
 		Start:   nil, //last block
 		Context: nil, // nil = no timeout
 	}, listenChannel,
+	   applierTGID,
 	)
 	if err != nil {
 		return nil, err
