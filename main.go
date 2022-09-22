@@ -52,6 +52,7 @@ type event_bc = *passport.PassportPassportApplied
 
 // channel to get this event from blockchain
 var ch = make(chan *passport.PassportPassportApplied)
+var ch_index = make(chan *passport.PassportPassportAppliedIndexed)
 
 //main database for dialogs, key (int64) is telegram user id
 var userDatabase = make(map[int64]user) // consider to change in persistend data storage?
@@ -169,7 +170,9 @@ func main() {
 						msg = tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, link)
 						bot.Send(msg)
 
-						subscription, err := SubscribeForApplications(session, ch)
+						//subscription, err := SubscribeForApplications(session, ch)
+						subscription, err := SubscribeForApplicationsIndexed(session, ch_index,tgid_array)
+
 						if err != nil {
 							log.Fatal(err)
 						}
@@ -181,7 +184,7 @@ func main() {
 									subscription.Unsubscribe()
 									break EventLoop
 								}
-							case eventResult := <-ch:
+							case eventResult := <-ch_index:
 								{
 									//fmt.Println("\n")
 									fmt.Println("User tg_id:", eventResult.ApplyerTg)
