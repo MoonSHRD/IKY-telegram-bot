@@ -166,7 +166,7 @@ func main() {
 						fmt.Println(user_name)
 						tgid_string := fmt.Sprint(tgid)
 						tgid_big := big.NewInt(tgid)
-						tgid_array := make([]*big.Int,0)
+						tgid_array := make([]*big.Int,1)
 						tgid_array[0] = tgid_big
 						link := baseURL + tg_id_query + tgid_string + tg_username_query + "@" + user_name
 						msg = tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, link)
