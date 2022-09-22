@@ -4,10 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-
 	"math/big"
-
-	//"math"
+	"strconv"
 
 	"os"
 
@@ -109,7 +107,7 @@ func main() {
 	fmt.Printf("Balance of the validator bot: %d\n", balance)
 
 	// Setting up Passport Contract
-	passportCenter, err := passport.NewPassport(common.HexToAddress("0x7A6C799D6548324539d2Da641bd5661aE11A845E"), client)
+	passportCenter, err := passport.NewPassport(common.HexToAddress("0x84567AcA32A80E9a05ef9D8540395248B478e302"), client)
 	if err != nil {
 		log.Fatalf("Failed to instantiate a TGPassport contract: %v", err)
 	}
@@ -165,14 +163,13 @@ func main() {
 						user_name := userDatabase[update.Message.From.ID].tg_username
 						fmt.Println(user_name)
 						tgid_string := fmt.Sprint(tgid)
-						tgid_big := big.NewInt(tgid)
-						tgid_array := make([]*big.Int,1)
-						tgid_array[0] = tgid_big
+						tgid_array := make([]int64,1)
+						tgid_array[0] = tgid
 						link := baseURL + tg_id_query + tgid_string + tg_username_query + "@" + user_name
 						msg = tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, link)
 						bot.Send(msg)
 
-						subscription, err := SubscribeForApplications(session, ch,tgid_array)
+						subscription, err := SubscribeForApplications(session, ch)
 						if err != nil {
 							log.Fatal(err)
 						}
@@ -188,10 +185,11 @@ func main() {
 								{
 									//fmt.Println("\n")
 									fmt.Println("User tg_id:", eventResult.ApplyerTg)
-									event_tgid := eventResult.ApplyerTg.Int64()
+									event_tgid := eventResult.ApplyerTg
 									fmt.Println("User wallet address:", eventResult.WalletAddress)
 									if event_tgid == tgid {
-										msg = tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, " your application have been recived "+eventResult.ApplyerTg.String())
+										applyer_tg_string := strconv.FormatInt(eventResult.ApplyerTg,10)
+										msg = tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, " your application have been recived "+applyer_tg_string)
 										bot.Send(msg)
 										DeclinePassport(auth, passportCenter, eventResult.WalletAddress) // TODO: IMPORTANT -- CHANGE IT TO APPROVE PASSPORT BEFORE PRODUCTION
 										subscription.Unsubscribe()
@@ -230,8 +228,21 @@ func loadEnv() {
 }
 
 // subscribing for Applications events. We use watchers without fast-forwarding past events
-func SubscribeForApplications(session *passport.PassportSession, listenChannel chan<- *passport.PassportPassportApplied, applierTGID []*big.Int) (event.Subscription, error) {
+func SubscribeForApplications(session *passport.PassportSession, listenChannel chan<- *passport.PassportPassportApplied) (event.Subscription, error) {
 	subscription, err := session.Contract.WatchPassportApplied(&bind.WatchOpts{
+		Start:   nil, //last block
+		Context: nil, // nil = no timeout
+	}, listenChannel,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return subscription, err
+}
+
+// subscribing for Applications events. We use watchers without fast-forwarding past events
+func SubscribeForApplicationsIndexed(session *passport.PassportSession, listenChannel chan<- *passport.PassportPassportAppliedIndexed, applierTGID []int64) (event.Subscription, error) {
+	subscription, err := session.Contract.WatchPassportAppliedIndexed(&bind.WatchOpts{
 		Start:   nil, //last block
 		Context: nil, // nil = no timeout
 	}, listenChannel,
