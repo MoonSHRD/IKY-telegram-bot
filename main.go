@@ -78,7 +78,7 @@ func main() {
 	msgTemplates["hello"] = "Hey, this bot is attaching personal wallets to telegram user & collective wallets to chat id"
 	msgTemplates["case0"] = "Go to link and attach your tg_id to your metamask wallet"
 	msgTemplates["await"] = "Awaiting for verification"
-	msgTemplates["case1"] = "Case1 message"
+	msgTemplates["case1"] = "You have successfully authorized your wallet to your account"
 
 	bot, err = tgbotapi.NewBotAPI(string(tgApiKey))
 	if err != nil {
@@ -101,18 +101,15 @@ func main() {
 
 	// Creating an auth transactor
 	auth, _ := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(4))
-	//auth2:= bind.NewKeyedTransactorWithChainID(privateKey,big.NewInt(4))
-	//NewKeyedTransactorWithChainID
 
 	// check calls
 	// check balance
-	//TODO: put old addresses. I did not update the front-end repo, so it's supposed to work with old contracts.
-	accountAddress := common.HexToAddress("0xc905803BbC804fECDc36850281fEd6520A346AC5")
+	accountAddress := common.HexToAddress("0x16d97A46030C5D3D705bca45439e48529997D8b2")
 	balance, _ := client.BalanceAt(ctx, accountAddress, nil) //our balance
 	fmt.Printf("Balance of the validator bot: %d\n", balance)
 
 	// Setting up Passport Contract
-	passportCenter, err := passport.NewPassport(common.HexToAddress("0xD9b7C0A33A079b4f639468665FB707881F0e8c95"), client)
+	passportCenter, err := passport.NewPassport(common.HexToAddress("0x7A6C799D6548324539d2Da641bd5661aE11A845E"), client)
 	if err != nil {
 		log.Fatalf("Failed to instantiate a TGPassport contract: %v", err)
 	}
@@ -209,8 +206,6 @@ func main() {
 						//updateDb.dialog_status = 2
 						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["case1"])
 						bot.Send(msg)
-
-						// TODO: Finish job
 						userDatabase[update.Message.From.ID] = updateDb
 					}
 
@@ -220,6 +215,8 @@ func main() {
 	}
 
 } // end of main func
+
+
 
 // load enviroment variables from .env file
 func loadEnv() {
