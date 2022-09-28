@@ -8,3 +8,10 @@ This bot is also protect from injections, so users can't attach wallet address t
 
 
 Blockchain part is generated from IKY repo, see it for more details about contracts business logic
+
+# How it works:
+1. User create intent to attach ethereum wallet to their tgid
+2. Bot generate link to IKY webapp, and start listining to events from it's contract with user tgid
+3. User go to webapp page, make transaction, submitting it's tgid
+4. Bot get event about it from blockchain
+5. Bot verifies registration
