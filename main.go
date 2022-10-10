@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"math/big"
-	"strconv"
 
 	"os"
 
@@ -86,7 +85,7 @@ func main() {
 
 	// Connecting to blockchain network
 	//  client, err := ethclient.Dial(os.Getenv("GATEWAY"))	// for global env config
-	client, err := ethclient.Dial(myenv["GATEWAY_RINKEBY_WS"]) // load from local .env file
+	client, err := ethclient.Dial(myenv["GATEWAY_GOERLI_WS"]) // load from local .env file
 	if err != nil {
 		log.Fatalf("could not connect to Ethereum gateway: %v\n", err)
 	}
@@ -103,12 +102,12 @@ func main() {
 
 	// check calls
 	// check balance
-	accountAddress := common.HexToAddress("0x16d97A46030C5D3D705bca45439e48529997D8b2")
+	accountAddress := common.HexToAddress("0xc905803BbC804fECDc36850281fEd6520A346AC5")
 	balance, _ := client.BalanceAt(ctx, accountAddress, nil) //our balance
 	fmt.Printf("Balance of the validator bot: %d\n", balance)
 
 	// Setting up Passport Contract
-	passportCenter, err := passport.NewPassport(common.HexToAddress("0x44df8833c2D7d58f2F84Ba994BA46aA8f552A78e"), client)
+	passportCenter, err := passport.NewPassport(common.HexToAddress("0x155C672bFdD482F2D67a7cd30e3acDc3e59D5092"), client)
 	if err != nil {
 		log.Fatalf("Failed to instantiate a TGPassport contract: %v", err)
 	}
@@ -164,14 +163,14 @@ func main() {
 						user_name := userDatabase[update.Message.From.ID].tg_username
 						fmt.Println(user_name)
 						tgid_string := fmt.Sprint(tgid)
-						tgid_array := make([]int64,1)
+						tgid_array := make([]int64, 1)
 						tgid_array[0] = tgid
 						link := baseURL + tg_id_query + tgid_string + tg_username_query + "@" + user_name
 						msg = tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, link)
 						bot.Send(msg)
 
 						//subscription, err := SubscribeForApplications(session, ch)   //  this is ordinary subscription to NORMAL event
-						subscription, err := SubscribeForApplicationsIndexed(session, ch_index,tgid_array)	// this is subscription to INDEXED event. This mean we can pass what exactly value of argument we want to see
+						subscription, err := SubscribeForApplicationsIndexed(session, ch_index, tgid_array) // this is subscription to INDEXED event. This mean we can pass what exactly value of argument we want to see
 
 						if err != nil {
 							log.Fatal(err)
@@ -188,32 +187,32 @@ func main() {
 								{
 									fmt.Println("User tg_id:", eventResult.ApplyerTg)
 									fmt.Println("User wallet address:", eventResult.WalletAddress)
-										applyer_tg_string := strconv.FormatInt(eventResult.ApplyerTg,10)
-										msg = tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, " your application have been recived "+applyer_tg_string)
-										bot.Send(msg)
-										ApprovePassport(auth, passportCenter, eventResult.WalletAddress) 
-										subscription.Unsubscribe()
-										break EventLoop
+									applyer_tg_string := fmt.Sprint(eventResult.ApplyerTg)
+									msg = tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, " your application have been recived "+applyer_tg_string)
+									bot.Send(msg)
+									ApprovePassport(auth, passportCenter, eventResult.WalletAddress)
+									subscription.Unsubscribe()
+									break EventLoop
 								}
-							/*  Use next snippet to work with regular events (when args are NOT INDEXED)
-							*	In this approach we parsing results from event and awaiting for values to match
-							case eventResult := <-ch:
-								{
-									//fmt.Println("\n")
-									fmt.Println("User tg_id:", eventResult.ApplyerTg)
-									event_tgid := eventResult.ApplyerTg
-									fmt.Println("User wallet address:", eventResult.WalletAddress)
-									if event_tgid == tgid {
-										applyer_tg_string := strconv.FormatInt(eventResult.ApplyerTg,10)
-										msg = tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, " your application have been recived "+applyer_tg_string)
-										bot.Send(msg)
-										ApprovePassport(auth, passportCenter, eventResult.WalletAddress)
-										subscription.Unsubscribe()
-										break EventLoop
-									}
-								} */
+								/*  Use next snippet to work with regular events (when args are NOT INDEXED)
+								*	In this approach we parsing results from event and awaiting for values to match
+								case eventResult := <-ch:
+									{
+										//fmt.Println("\n")
+										fmt.Println("User tg_id:", eventResult.ApplyerTg)
+										event_tgid := eventResult.ApplyerTg
+										fmt.Println("User wallet address:", eventResult.WalletAddress)
+										if event_tgid == tgid {
+											applyer_tg_string := strconv.FormatInt(eventResult.ApplyerTg,10)
+											msg = tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, " your application have been recived "+applyer_tg_string)
+											bot.Send(msg)
+											ApprovePassport(auth, passportCenter, eventResult.WalletAddress)
+											subscription.Unsubscribe()
+											break EventLoop
+										}
+									} */
 							}
-							
+
 						}
 						updateDb.dialog_status = 1
 						userDatabase[update.Message.From.ID] = updateDb
@@ -233,8 +232,6 @@ func main() {
 	}
 
 } // end of main func
-
-
 
 // load enviroment variables from .env file
 func loadEnv() {
@@ -263,7 +260,7 @@ func SubscribeForApplicationsIndexed(session *passport.PassportSession, listenCh
 		Start:   nil, //last block
 		Context: nil, // nil = no timeout
 	}, listenChannel,
-	   applierTGID,
+		applierTGID,
 	)
 	if err != nil {
 		return nil, err
