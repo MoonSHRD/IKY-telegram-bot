@@ -98,16 +98,16 @@ func main() {
 	}
 
 	// Creating an auth transactor
-	auth, _ := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(4))
+	auth, _ := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(5))
 
 	// check calls
 	// check balance
-	accountAddress := common.HexToAddress("0xc905803BbC804fECDc36850281fEd6520A346AC5")
+	accountAddress := common.HexToAddress(myenv["ACCOUNT_ADDRESS"])
 	balance, _ := client.BalanceAt(ctx, accountAddress, nil) //our balance
 	fmt.Printf("Balance of the validator bot: %d\n", balance)
 
 	// Setting up Passport Contract
-	passportCenter, err := passport.NewPassport(common.HexToAddress("0x155C672bFdD482F2D67a7cd30e3acDc3e59D5092"), client)
+	passportCenter, err := passport.NewPassport(common.HexToAddress(myenv["PASSPORT_ADDRESS"]), client)
 	if err != nil {
 		log.Fatalf("Failed to instantiate a TGPassport contract: %v", err)
 	}
