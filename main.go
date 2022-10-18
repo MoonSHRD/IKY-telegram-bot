@@ -257,11 +257,26 @@ func main() {
 							updateDb.dialog_status = 4
 							userDatabase[update.Message.From.ID] = updateDb
 						}
+					}
 
-
-
+				// whois
+				case 3:
+					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
+						var address_to_check_string = update.Message.Text
+						var address_to_check = common.HexToAddress(address_to_check_string)
+						tg_nickname,err := WhoIsAddress(session, address_to_check) 
+						if err != nil {
+							log.Println("error with getting nickname associated with eth wallet, probably not registred yet")
+						}
+						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid,tg_nickname )
+						bot.Send(msg)
+						updateDb.dialog_status = 2
+						userDatabase[update.Message.From.ID] = updateDb
 
 					}
+
+				// trust @todo: add functionality for trust
+				case 4:
 
 				}
 			}
@@ -345,12 +360,23 @@ func DeclinePassport(auth *bind.TransactOpts, pc *passport.Passport, user_addres
 			Context:   context.Background(),
 		}, user_address,
 	)
-
 	if err != nil {
 		log.Println("cant send DECLINING reques to contract: ")
 		log.Print(err)
 	}
-
 	fmt.Printf("transaction for DECLINING passport sent! Please wait for tx %s to be confirmed. \n", tx_to_approve.Hash().Hex())
+}
+
+
+// allow bot to get tg nickname associated with this eth wallet
+func WhoIsAddress(session *passport.PassportSession,address_to_check common.Address) (string,error){
+	passport, err := session.GetPassportByAddress(address_to_check)
+	if err != nil {
+		log.Println("cant get passport associated with this address, possible it's not registred yet: ")
+		log.Print(err)
+		 return "error",err
+	}
+	nickname := passport.UserName
+	return nickname,nil
 
 }
