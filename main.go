@@ -380,3 +380,18 @@ func WhoIsAddress(session *passport.PassportSession,address_to_check common.Addr
 	return nickname,nil
 
 }
+
+// generate link to trust page
+func TrustUserLink(tgid_string string, friend_tg_id string, friend_username string) (string) {
+	//http://localhost:3000/trust?user_tg_id=1337&friend_tg_id=1997&friend_user_name=sbekket
+	loadEnv()
+	baseURL_ := myenv["BASEURL"]
+	trustURL := "/trust"
+	tg_id_query_trust := "?user_tg_id="
+//	tg_username_query_trust := "&user_tg_name="
+	to_id_query:= "&friend_tg_id="
+	to_username_query := "&friend_user_name="
+	link := baseURL_ + trustURL + tg_id_query_trust + tgid_string + to_id_query + friend_tg_id + to_username_query + "@" + friend_username
+	return link
+
+}
