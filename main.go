@@ -28,6 +28,12 @@ var yesNoKeyboard = tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButton("No")),
 )
 
+var optionKeyboard = tgbotapi.NewReplyKeyboard(
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("WhoIs"),
+		tgbotapi.NewKeyboardButton("WhoTrust")),
+)
+
 var mainKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("Verify personal wallet")),
@@ -76,7 +82,9 @@ func main() {
 	msgTemplates["hello"] = "Hey, this bot is attaching personal wallets to telegram user & collective wallets to chat id"
 	msgTemplates["case0"] = "Go to link and attach your tg_id to your metamask wallet"
 	msgTemplates["await"] = "Awaiting for verification"
-	msgTemplates["case1"] = "You have successfully authorized your wallet to your account"
+	msgTemplates["case1"] = "You have successfully authorized your wallet to your account. Now you can use additional functions"
+	msgTemplates["who_is"] = "Input wallet address to know it's associated telegram nickname"
+	msgTemplates["who_trust"] = "Input telegram nickname to know who trust and who is untrust to this user"
 
 	//var baseURL = "http://localhost:3000/"
 	//var baseURL = "https://ikytest-gw0gy01is-s0lidarnost.vercel.app/"
@@ -226,10 +234,33 @@ func main() {
 
 				case 1:
 					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
-						//updateDb.dialog_status = 2
 						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["case1"])
+						msg.ReplyMarkup = optionKeyboard
 						bot.Send(msg)
+						updateDb.dialog_status = 2
 						userDatabase[update.Message.From.ID] = updateDb
+						
+					}
+
+				case 2:
+					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
+						if update.Message.Text == "WhoIs" {
+							msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["who_is"])
+							msg.ReplyMarkup = optionKeyboard
+							bot.Send(msg)
+							updateDb.dialog_status = 3
+							userDatabase[update.Message.From.ID] = updateDb
+						} else if update.Message.Text == "WhoTrust" {
+							msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["who_trust"])
+							msg.ReplyMarkup = optionKeyboard
+							bot.Send(msg)
+							updateDb.dialog_status = 4
+							userDatabase[update.Message.From.ID] = updateDb
+						}
+
+
+
+
 					}
 
 				}
