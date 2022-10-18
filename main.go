@@ -28,6 +28,12 @@ var yesNoKeyboard = tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButton("No")),
 )
 
+var optionKeyboard = tgbotapi.NewReplyKeyboard(
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("WhoIs"),
+		tgbotapi.NewKeyboardButton("WhoTrust")),
+)
+
 var mainKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("Verify personal wallet")),
@@ -76,7 +82,9 @@ func main() {
 	msgTemplates["hello"] = "Hey, this bot is attaching personal wallets to telegram user & collective wallets to chat id"
 	msgTemplates["case0"] = "Go to link and attach your tg_id to your metamask wallet"
 	msgTemplates["await"] = "Awaiting for verification"
-	msgTemplates["case1"] = "You have successfully authorized your wallet to your account"
+	msgTemplates["case1"] = "You have successfully authorized your wallet to your account. Now you can use additional functions"
+	msgTemplates["who_is"] = "Input wallet address to know it's associated telegram nickname"
+	msgTemplates["who_trust"] = "Input telegram nickname to know who trust and who is untrust to this user"
 
 	//var baseURL = "http://localhost:3000/"
 	//var baseURL = "https://ikytest-gw0gy01is-s0lidarnost.vercel.app/"
@@ -226,11 +234,49 @@ func main() {
 
 				case 1:
 					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
-						//updateDb.dialog_status = 2
 						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["case1"])
+						msg.ReplyMarkup = optionKeyboard
 						bot.Send(msg)
+						updateDb.dialog_status = 2
 						userDatabase[update.Message.From.ID] = updateDb
+						
 					}
+
+				case 2:
+					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
+						if update.Message.Text == "WhoIs" {
+							msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["who_is"])
+							msg.ReplyMarkup = optionKeyboard
+							bot.Send(msg)
+							updateDb.dialog_status = 3
+							userDatabase[update.Message.From.ID] = updateDb
+						} else if update.Message.Text == "WhoTrust" {
+							msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["who_trust"])
+							msg.ReplyMarkup = optionKeyboard
+							bot.Send(msg)
+							updateDb.dialog_status = 4
+							userDatabase[update.Message.From.ID] = updateDb
+						}
+					}
+
+				// whois
+				case 3:
+					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
+						var address_to_check_string = update.Message.Text
+						var address_to_check = common.HexToAddress(address_to_check_string)
+						tg_nickname,err := WhoIsAddress(session, address_to_check) 
+						if err != nil {
+							log.Println("error with getting nickname associated with eth wallet, probably not registred yet")
+						}
+						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid,tg_nickname )
+						bot.Send(msg)
+						updateDb.dialog_status = 2
+						userDatabase[update.Message.From.ID] = updateDb
+
+					}
+
+				// trust @todo: add functionality for trust
+				case 4:
 
 				}
 			}
@@ -314,12 +360,38 @@ func DeclinePassport(auth *bind.TransactOpts, pc *passport.Passport, user_addres
 			Context:   context.Background(),
 		}, user_address,
 	)
-
 	if err != nil {
 		log.Println("cant send DECLINING reques to contract: ")
 		log.Print(err)
 	}
-
 	fmt.Printf("transaction for DECLINING passport sent! Please wait for tx %s to be confirmed. \n", tx_to_approve.Hash().Hex())
+}
+
+
+// allow bot to get tg nickname associated with this eth wallet
+func WhoIsAddress(session *passport.PassportSession,address_to_check common.Address) (string,error){
+	passport, err := session.GetPassportByAddress(address_to_check)
+	if err != nil {
+		log.Println("cant get passport associated with this address, possible it's not registred yet: ")
+		log.Print(err)
+		 return "error",err
+	}
+	nickname := passport.UserName
+	return nickname,nil
+
+}
+
+// generate link to trust page
+func TrustUserLink(tgid_string string, friend_tg_id string, friend_username string) (string) {
+	//http://localhost:3000/trust?user_tg_id=1337&friend_tg_id=1997&friend_user_name=sbekket
+	loadEnv()
+	baseURL_ := myenv["BASEURL"]
+	trustURL := "/trust"
+	tg_id_query_trust := "?user_tg_id="
+//	tg_username_query_trust := "&user_tg_name="
+	to_id_query:= "&friend_tg_id="
+	to_username_query := "&friend_user_name="
+	link := baseURL_ + trustURL + tg_id_query_trust + tgid_string + to_id_query + friend_tg_id + to_username_query + "@" + friend_username
+	return link
 
 }
