@@ -58,7 +58,7 @@ var userDatabase = make(map[int64]user) // consider to change in persistend data
 
 var msgTemplates = make(map[string]string)
 
-var baseURL = "http://localhost:3000/"
+
 var tg_id_query = "?user_tg_id="
 var tg_username_query = "&user_tg_name="
 
@@ -77,6 +77,12 @@ func main() {
 	msgTemplates["case0"] = "Go to link and attach your tg_id to your metamask wallet"
 	msgTemplates["await"] = "Awaiting for verification"
 	msgTemplates["case1"] = "You have successfully authorized your wallet to your account"
+
+	//var baseURL = "http://localhost:3000/"
+	//var baseURL = "https://ikytest-gw0gy01is-s0lidarnost.vercel.app/"
+	var baseURL = myenv["BASEURL"];
+
+
 
 	bot, err = tgbotapi.NewBotAPI(string(tgApiKey))
 	if err != nil {
