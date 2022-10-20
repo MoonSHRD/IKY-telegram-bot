@@ -287,19 +287,40 @@ func main() {
 				// trust @todo: add functionality for trust
 				case 4:
 					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
-						if update.Message.Text == "WhoIs" {
-							msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["who_is"])
+						if update.Message.Text == "Trust/Untrust user" {
+							msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["trust_link"])
 							msg.ReplyMarkup = optionKeyboard
 							bot.Send(msg)
-							updateDb.dialog_status = 3
+							updateDb.dialog_status = 5
 							userDatabase[update.Message.From.ID] = updateDb
-						} else if update.Message.Text == "KARMA" {
-							msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["karma"])
+						} else if update.Message.Text == "See who trust/untrust user" {
+							msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["who_trust"])
 							msg.ReplyMarkup = optionKeyboard
 							bot.Send(msg)
-							updateDb.dialog_status = 4
+							updateDb.dialog_status = 6
 							userDatabase[update.Message.From.ID] = updateDb
 						}
+					}
+
+				// generate link	
+			    case 5:
+					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
+						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, "this functionality is not yet implemented")
+						bot.Send(msg)
+						updateDb.dialog_status = 2
+						userDatabase[update.Message.From.ID] = updateDb
+						//my_tg_id := userDatabase[update.Message.From.ID].tgid
+						//to_id := tgbotapi.
+
+					}
+
+				// see trusters
+				case 6:
+					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
+					msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, "this functionality is not yet implemented")
+					bot.Send(msg)
+					updateDb.dialog_status = 2
+					userDatabase[update.Message.From.ID] = updateDb
 					}
 				}
 			}
