@@ -31,7 +31,13 @@ var yesNoKeyboard = tgbotapi.NewReplyKeyboard(
 var optionKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("WhoIs"),
-		tgbotapi.NewKeyboardButton("WhoTrust")),
+		tgbotapi.NewKeyboardButton("KARMA")),
+)
+
+var trustKeyboard = tgbotapi.NewReplyKeyboard(
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("Trust/Untrust user"),
+		tgbotapi.NewKeyboardButton("See who trust/untrust user")),
 )
 
 var mainKeyboard = tgbotapi.NewReplyKeyboard(
@@ -84,7 +90,10 @@ func main() {
 	msgTemplates["await"] = "Awaiting for verification"
 	msgTemplates["case1"] = "You have successfully authorized your wallet to your account. Now you can use additional functions"
 	msgTemplates["who_is"] = "Input wallet address to know it's associated telegram nickname"
-	msgTemplates["who_trust"] = "Input telegram nickname to know who trust and who is untrust to this user"
+	msgTemplates["karma"] = "Karma system allow users to express trust/untrust to specific tg user or see who is trust/untrust to this user. Data is immutable and store in blockchain"
+	msgTemplates["trust_link"] = "Send telegram nickname of person who you are willing to trust/untrust"
+	msgTemplates["who_trust"] = "Send telegram nickname of person to see who trust/untrust it"
+
 
 	//var baseURL = "http://localhost:3000/"
 	//var baseURL = "https://ikytest-gw0gy01is-s0lidarnost.vercel.app/"
@@ -250,8 +259,8 @@ func main() {
 							bot.Send(msg)
 							updateDb.dialog_status = 3
 							userDatabase[update.Message.From.ID] = updateDb
-						} else if update.Message.Text == "WhoTrust" {
-							msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["who_trust"])
+						} else if update.Message.Text == "KARMA" {
+							msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["karma"])
 							msg.ReplyMarkup = optionKeyboard
 							bot.Send(msg)
 							updateDb.dialog_status = 4
@@ -277,7 +286,21 @@ func main() {
 
 				// trust @todo: add functionality for trust
 				case 4:
-
+					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
+						if update.Message.Text == "WhoIs" {
+							msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["who_is"])
+							msg.ReplyMarkup = optionKeyboard
+							bot.Send(msg)
+							updateDb.dialog_status = 3
+							userDatabase[update.Message.From.ID] = updateDb
+						} else if update.Message.Text == "KARMA" {
+							msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["karma"])
+							msg.ReplyMarkup = optionKeyboard
+							bot.Send(msg)
+							updateDb.dialog_status = 4
+							userDatabase[update.Message.From.ID] = updateDb
+						}
+					}
 				}
 			}
 		}
