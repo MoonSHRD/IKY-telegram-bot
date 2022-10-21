@@ -2,4 +2,4 @@ PK=yourprivatekey
 GATEWAY_GOERLI_WS=wss://goerli.infura.io/
 ACCOUNT_ADDRESS=0xc905803BbC804fECDc36850281fEd6520A346AC5
 PASSPORT_ADDRESS=0x155C672bFdD482F2D67a7cd30e3acDc3e59D5092
-BASEURL=https://ikytest.vercel.app/ (or http://localhost:3000/ for local tests)
+BASEURL=https://ikytest.vercel.app/register (or http://localhost:3000/ for local tests)
