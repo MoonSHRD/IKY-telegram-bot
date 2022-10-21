@@ -65,6 +65,8 @@ type event_bc = *passport.PassportPassportApplied
 var ch = make(chan *passport.PassportPassportApplied)
 var ch_index = make(chan *passport.PassportPassportAppliedIndexed)
 
+var ch_approved = make(chan *passport.PassportPassportApproved)
+
 //main database for dialogs, key (int64) is telegram user id
 var userDatabase = make(map[int64]user) // consider to change in persistend data storage?
 
@@ -214,6 +216,37 @@ func main() {
 									msg = tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, " your application have been recived "+applyer_tg_string)
 									bot.Send(msg)
 									ApprovePassport(auth, passportCenter, eventResult.WalletAddress)
+									subscriptionApproved, err := SubscribeForApprovals(session,ch_approved)
+									if err != nil {
+										log.Fatal(err)
+									}
+														ApproveLoop:
+															   for {
+																	select {
+																	case <-ctx.Done():
+																		{
+																			subscriptionApproved.Unsubscribe()
+																			break ApproveLoop
+																		}
+																	case eventResult2 := <-ch_approved:
+																		{
+																			fmt.Println("User tg_id:", eventResult2.ApplyerTg)
+																			fmt.Println("User wallet address:", eventResult2.WalletAddress)
+																			approved_tg_string := fmt.Sprint(eventResult2.ApplyerTg)
+																			if approved_tg_string == applyer_tg_string {
+																				msg = tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, " your application have been APPROVED "+approved_tg_string)
+																				bot.Send(msg)
+																				subscriptionApproved.Unsubscribe()
+																				break ApproveLoop
+																			}
+																			
+
+																			
+																		}
+																	}
+															   }		
+
+
 									subscription.Unsubscribe()
 									break EventLoop
 								}
@@ -239,8 +272,9 @@ func main() {
 						}
 						updateDb.dialog_status = 1
 						userDatabase[update.Message.From.ID] = updateDb
+						
 					}
-
+					fallthrough // МЫ ЛЕД ПОД НОГАМИ МАЙОРА!
 				case 1:
 					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
 						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["case1"])
@@ -357,6 +391,19 @@ func SubscribeForApplicationsIndexed(session *passport.PassportSession, listenCh
 		Context: nil, // nil = no timeout
 	}, listenChannel,
 		applierTGID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return subscription, err
+}
+
+// subscribing for APPROVAL events. We use watchers without fast-forwarding past events
+func SubscribeForApprovals(session *passport.PassportSession, listenChannel chan<- *passport.PassportPassportApproved) (event.Subscription, error) {
+	subscription, err := session.Contract.WatchPassportApproved(&bind.WatchOpts{
+		Start:   nil, //last block
+		Context: nil, // nil = no timeout
+	}, listenChannel,
 	)
 	if err != nil {
 		return nil, err
