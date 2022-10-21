@@ -15,3 +15,9 @@ Blockchain part is generated from IKY repo, see it for more details about contra
 3. User go to webapp page, make transaction, submitting it's tgid
 4. Bot get event about it from blockchain
 5. Bot verifies registration
+
+## Deploy with Docker
+
+1. Copy `.envExample` into `.env` and fill it with your values
+2. Run with `docker-compose up -d`
+3. Done
