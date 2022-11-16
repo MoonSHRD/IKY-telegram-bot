@@ -36,7 +36,6 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
       -
         name: Put .env in sources
-        if: ${{ secrets.ENV_FILE != "" }}
         run: |
           printf "%s" "${{ secrets.ENV_FILE }}" > .env
       -
