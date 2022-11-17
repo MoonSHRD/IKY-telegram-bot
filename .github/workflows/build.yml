@@ -1,6 +1,7 @@
 name: Build and push 
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - 'master'
@@ -12,6 +13,7 @@ env:
 jobs:
   docker:
     runs-on: ubuntu-latest
+    environment: production
     steps:
       -
         name: Checkout
@@ -32,6 +34,10 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      -
+        name: Put .env in sources
+        run: |
+          printf "%s" "${{ secrets.ENV_FILE }}" > .env
       -
         name: Build and push
         uses: docker/build-push-action@v3
