@@ -1,6 +1,7 @@
 # IKY-telegram-bot
 Verifier bot for IKY (https://github.com/MoonSHRD/IKY)
-Currently can be found in tg as @E_Passport_bot
+Currently can be found in tg as 
+https://t.me/E_Passport_bot
 
 This bot is comfortable telegram bot, which allow users to tether their personal wallets to their tg_id, using metamask
 
