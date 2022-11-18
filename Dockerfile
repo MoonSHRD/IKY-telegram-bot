@@ -20,6 +20,7 @@ FROM alpine:latest
 WORKDIR /app
 
 RUN apk add ca-certificates
+COPY *.env ./
 COPY --from=build_base /out/bot ./bot
 
 EXPOSE 8080
