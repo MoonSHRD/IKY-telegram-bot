@@ -88,7 +88,7 @@ func main() {
 	pk := myenv["PK"] // load private key from env
 
 	msgTemplates["hello"] = "Hey, this bot is attaching personal wallets to telegram user & collective wallets to chat id"
-	msgTemplates["case0"] = "Go to link and attach your tg_id to your metamask wallet"
+	msgTemplates["case0"] = "Open following link in metamask broswer"
 	msgTemplates["await"] = "Awaiting for verification"
 	msgTemplates["case1"] = "You have successfully authorized your wallet to your account. Now you can use additional functions"
 	msgTemplates["who_is"] = "Input wallet address to know it's associated telegram nickname"
@@ -173,6 +173,12 @@ func main() {
 				msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["hello"])
 				msg.ReplyMarkup = mainKeyboard
 				bot.Send(msg)
+				// check for registration
+				registred := IsAlreadyRegistred(session,update.Message.From.ID)
+				if registred == true {
+					userDatabase[update.Message.From.ID] = user{update.Message.Chat.ID, update.Message.Chat.UserName, 1}
+				}
+
 			} else {
 
 				switch userDatabase[update.Message.From.ID].dialog_status {
@@ -470,6 +476,22 @@ func WhoIsAddress(session *passport.PassportSession,address_to_check common.Addr
 	nickname := passport.UserName
 	return nickname,nil
 
+}
+
+func IsAlreadyRegistred(session *passport.PassportSession, user_id int64) (bool) {
+	//GetPassportWalletByID
+	passport_address, err := session.GetPassportWalletByID(user_id)
+	if err != nil {
+		return false
+	}
+	log.Println("check that user with this id:", user_id)
+	log.Println("have associated wallet address:",passport_address)
+	if passport_address == common.HexToAddress("0x0000000000000000000000000000000000000000") {
+		log.Println("passport is null, user is not registred")
+		return false
+	} else {
+		return true
+	}
 }
 
 // generate link to trust page
