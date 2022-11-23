@@ -30,15 +30,9 @@ var yesNoKeyboard = tgbotapi.NewReplyKeyboard(
 
 var optionKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("WhoIs"),
-		tgbotapi.NewKeyboardButton("KARMA")),
+		tgbotapi.NewKeyboardButton("WhoIs"),),
 )
 
-var trustKeyboard = tgbotapi.NewReplyKeyboard(
-	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("Trust/Untrust user"),
-		tgbotapi.NewKeyboardButton("See who trust/untrust user")),
-)
 
 var mainKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
@@ -92,9 +86,7 @@ func main() {
 	msgTemplates["await"] = "Awaiting for verification"
 	msgTemplates["case1"] = "You have successfully authorized your wallet to your account. Now you can use additional functions"
 	msgTemplates["who_is"] = "Input wallet address to know it's associated telegram nickname"
-	msgTemplates["karma"] = "Karma system allow users to express trust/untrust to specific tg user or see who is trust/untrust to this user. Data is immutable and store in blockchain"
-	msgTemplates["trust_link"] = "Send telegram nickname of person who you are willing to trust/untrust"
-	msgTemplates["who_trust"] = "Send telegram nickname of person to see who trust/untrust it"
+
 
 
 	//var baseURL = "http://localhost:3000/"
@@ -202,85 +194,17 @@ func main() {
 
 						//subscription, err := SubscribeForApplications(session, ch)   //  this is ordinary subscription to NORMAL event
 						subscription, err := SubscribeForApplicationsIndexed(session, ch_index, tgid_array) // this is subscription to INDEXED event. This mean we can pass what exactly value of argument we want to see
-
 						if err != nil {
-							log.Fatal(err)
+							log.Println(err)
 						}
-					EventLoop:
-						for {
-							select {
-							case <-ctx.Done():
-								{
-									subscription.Unsubscribe()
-									break EventLoop
-								}
-							case eventResult := <-ch_index:
-								{
-									fmt.Println("User tg_id:", eventResult.ApplyerTg)
-									fmt.Println("User wallet address:", eventResult.WalletAddress)
-									applyer_tg_string := fmt.Sprint(eventResult.ApplyerTg)
-									msg = tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, " your application have been recived "+applyer_tg_string)
-									bot.Send(msg)
-									ApprovePassport(auth, passportCenter, eventResult.WalletAddress)
-									subscriptionApproved, err := SubscribeForApprovals(session,ch_approved)
-									if err != nil {
-										log.Fatal(err)
-									}
-														ApproveLoop:
-															   for {
-																	select {
-																	case <-ctx.Done():
-																		{
-																			subscriptionApproved.Unsubscribe()
-																			break ApproveLoop
-																		}
-																	case eventResult2 := <-ch_approved:
-																		{
-																			fmt.Println("User tg_id:", eventResult2.ApplyerTg)
-																			fmt.Println("User wallet address:", eventResult2.WalletAddress)
-																			approved_tg_string := fmt.Sprint(eventResult2.ApplyerTg)
-																			if approved_tg_string == applyer_tg_string {
-																				msg = tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, " your application have been APPROVED "+approved_tg_string)
-																				bot.Send(msg)
-																				subscriptionApproved.Unsubscribe()
-																				break ApproveLoop
-																			}
-																			
+					
+						go AsyncApproveChain(ctx,subscription,update.Message.From.ID,auth,passportCenter,session,userDatabase)
 
-																			
-																		}
-																	}
-															   }		
-
-
-									subscription.Unsubscribe()
-									break EventLoop
-								}
-								/*  Use next snippet to work with regular events (when args are NOT INDEXED)
-								*	In this approach we parsing results from event and awaiting for values to match
-								case eventResult := <-ch:
-									{
-										//fmt.Println("\n")
-										fmt.Println("User tg_id:", eventResult.ApplyerTg)
-										event_tgid := eventResult.ApplyerTg
-										fmt.Println("User wallet address:", eventResult.WalletAddress)
-										if event_tgid == tgid {
-											applyer_tg_string := strconv.FormatInt(eventResult.ApplyerTg,10)
-											msg = tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, " your application have been recived "+applyer_tg_string)
-											bot.Send(msg)
-											ApprovePassport(auth, passportCenter, eventResult.WalletAddress)
-											subscription.Unsubscribe()
-											break EventLoop
-										}
-									} */
-							}
-
-						}
-						updateDb.dialog_status = 1
+						updateDb.dialog_status = 4
 						userDatabase[update.Message.From.ID] = updateDb
 						
 					}
-					fallthrough // МЫ ЛЕД ПОД НОГАМИ МАЙОРА!
+				//	fallthrough // МЫ ЛЕД ПОД НОГАМИ МАЙОРА!
 				case 1:
 					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
 						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["case1"])
@@ -298,12 +222,6 @@ func main() {
 							msg.ReplyMarkup = optionKeyboard
 							bot.Send(msg)
 							updateDb.dialog_status = 3
-							userDatabase[update.Message.From.ID] = updateDb
-						} else if update.Message.Text == "KARMA" {
-							msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["karma"])
-							msg.ReplyMarkup = optionKeyboard
-							bot.Send(msg)
-							updateDb.dialog_status = 4
 							userDatabase[update.Message.From.ID] = updateDb
 						}
 					}
@@ -324,44 +242,16 @@ func main() {
 
 					}
 
-				// trust @todo: add functionality for trust
+				// 
 				case 4:
 					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
-						if update.Message.Text == "Trust/Untrust user" {
-							msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["trust_link"])
-							msg.ReplyMarkup = optionKeyboard
-							bot.Send(msg)
-							updateDb.dialog_status = 5
-							userDatabase[update.Message.From.ID] = updateDb
-						} else if update.Message.Text == "See who trust/untrust user" {
-							msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["who_trust"])
-							msg.ReplyMarkup = optionKeyboard
-							bot.Send(msg)
-							updateDb.dialog_status = 6
-							userDatabase[update.Message.From.ID] = updateDb
-						}
-					}
-
-				// generate link	
-			    case 5:
-					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
-						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, "this functionality is not yet implemented")
+						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["await"])
 						bot.Send(msg)
-						updateDb.dialog_status = 2
+						updateDb.dialog_status = 4
 						userDatabase[update.Message.From.ID] = updateDb
-						//my_tg_id := userDatabase[update.Message.From.ID].tgid
-						//to_id := tgbotapi.
-
 					}
 
-				// see trusters
-				case 6:
-					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
-					msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, "this functionality is not yet implemented")
-					bot.Send(msg)
-					updateDb.dialog_status = 2
-					userDatabase[update.Message.From.ID] = updateDb
-					}
+
 				}
 			}
 		}
@@ -375,6 +265,64 @@ func loadEnv() {
 	if myenv, err = godotenv.Read(envLoc); err != nil {
 		log.Printf("could not load env from %s: %v", envLoc, err)
 	}
+}
+
+func AsyncApproveChain(ctx context.Context,subscription event.Subscription, tgid int64, auth *bind.TransactOpts, passportCenter *passport.Passport, session *passport.PassportSession, userDatabase map[int64]user) {
+	EventLoop:
+						for {
+							select {
+							case <-ctx.Done():
+								{
+									subscription.Unsubscribe()
+									break EventLoop
+								}
+							case eventResult := <-ch_index:
+								{
+									fmt.Println("User tg_id:", eventResult.ApplyerTg)
+									fmt.Println("User wallet address:", eventResult.WalletAddress)
+									applyer_tg_string := fmt.Sprint(eventResult.ApplyerTg)
+									msg := tgbotapi.NewMessage(userDatabase[tgid].tgid, " your application have been recived "+applyer_tg_string)
+									bot.Send(msg)
+									ApprovePassport(auth, passportCenter, eventResult.WalletAddress)
+									subscriptionApproved, err := SubscribeForApprovals(session,ch_approved)
+									if err != nil {
+										log.Fatal(err)
+									}
+														ApproveLoop:
+															   for {
+																	select {
+																	case <-ctx.Done():
+																		{
+																			subscriptionApproved.Unsubscribe()
+																			break ApproveLoop
+																		}
+																	case eventResult2 := <-ch_approved:
+																		{
+																			fmt.Println("User tg_id:", eventResult2.ApplyerTg)
+																			fmt.Println("User wallet address:", eventResult2.WalletAddress)
+																			approved_tg_string := fmt.Sprint(eventResult2.ApplyerTg)
+																			if approved_tg_string == applyer_tg_string {
+																				msg = tgbotapi.NewMessage(userDatabase[tgid].tgid, " your application have been APPROVED "+approved_tg_string)
+																				bot.Send(msg)
+																				subscriptionApproved.Unsubscribe()
+																				break ApproveLoop
+																			}
+																			
+
+																			
+																		}
+																	}
+															   }		
+
+
+									subscription.Unsubscribe()
+									break EventLoop
+								}
+								}
+						}
+						updateDb := userDatabase[tgid]
+						updateDb.dialog_status = 1
+						userDatabase[tgid] = updateDb
 }
 
 // subscribing for Applications events. We use watchers without fast-forwarding past events
