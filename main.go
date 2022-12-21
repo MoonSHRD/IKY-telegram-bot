@@ -50,7 +50,7 @@ type user struct {
 	dialog_status int64
 }
 
-type event_iterator = *passport.PassportPassportAppliedIterator // For filter  @TODO: consider removing
+
 
 // event we got from blockchain
 type event_bc = *passport.PassportPassportApplied
@@ -102,7 +102,7 @@ func main() {
 
 	// Connecting to blockchain network
 	//  client, err := ethclient.Dial(os.Getenv("GATEWAY"))	// for global env config
-	client, err := ethclient.Dial(myenv["GATEWAY_GOERLI_WS"]) // load from local .env file
+	client, err := ethclient.Dial(myenv["GATEWAY_POLYGON_WS"]) // load from local .env file
 	if err != nil {
 		log.Fatalf("could not connect to Ethereum gateway: %v\n", err)
 	}
