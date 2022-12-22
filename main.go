@@ -125,7 +125,7 @@ func main() {
 	session := &passport.PassportSession{
 		Contract: passportCenter,
 		CallOpts: bind.CallOpts{
-			Pending: true,
+			Pending: true,			//TODO: change to false to avoid double-spend attack(?)
 			From:    auth.From,
 			Context: context.Background(),
 		},
