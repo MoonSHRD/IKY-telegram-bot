@@ -30,27 +30,24 @@ var yesNoKeyboard = tgbotapi.NewReplyKeyboard(
 
 var optionKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("WhoIs"),),
+		tgbotapi.NewKeyboardButton("WhoIs")),
 )
-
 
 var mainKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("Verify personal wallet")),
 )
 
-//to operate the bot, put a text file containing key for your bot acquired from telegram "botfather" to the same directory with this file
+// to operate the bot, put a text file containing key for your bot acquired from telegram "botfather" to the same directory with this file
 var tgApiKey, err = os.ReadFile(".secret")
 var bot, error1 = tgbotapi.NewBotAPI(string(tgApiKey))
 
-//type containing all the info about user input
+// type containing all the info about user input
 type user struct {
 	tgid          int64
 	tg_username   string
 	dialog_status int64
 }
-
-
 
 // event we got from blockchain
 type event_bc = *passport.PassportPassportApplied
@@ -61,11 +58,10 @@ var ch_index = make(chan *passport.PassportPassportAppliedIndexed)
 
 var ch_approved = make(chan *passport.PassportPassportApproved)
 
-//main database for dialogs, key (int64) is telegram user id
+// main database for dialogs, key (int64) is telegram user id
 var userDatabase = make(map[int64]user) // consider to change in persistend data storage?
 
 var msgTemplates = make(map[string]string)
-
 
 var tg_id_query = "?user_tg_id="
 var tg_username_query = "&user_tg_name="
@@ -87,13 +83,9 @@ func main() {
 	msgTemplates["case1"] = "You have successfully authorized your wallet to your account. Now you can use additional functions"
 	msgTemplates["who_is"] = "Input wallet address to know it's associated telegram nickname"
 
-
-
 	//var baseURL = "http://localhost:3000/"
 	//var baseURL = "https://ikytest-gw0gy01is-s0lidarnost.vercel.app/"
-	var baseURL = myenv["BASEURL"];
-
-
+	var baseURL = myenv["BASEURL"]
 
 	bot, err = tgbotapi.NewBotAPI(string(tgApiKey))
 	if err != nil {
@@ -115,7 +107,7 @@ func main() {
 	}
 
 	// Creating an auth transactor
-	auth, _ := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(5))
+	auth, _ := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(137))
 
 	// check calls
 	// check balance
@@ -166,8 +158,8 @@ func main() {
 				msg.ReplyMarkup = mainKeyboard
 				bot.Send(msg)
 				// check for registration
-				registred := IsAlreadyRegistred(session,update.Message.From.ID)
-				if registred == true {
+				registred := IsAlreadyRegistred(session, update.Message.From.ID)
+				if registred {
 					userDatabase[update.Message.From.ID] = user{update.Message.Chat.ID, update.Message.Chat.UserName, 1}
 				}
 
@@ -197,12 +189,12 @@ func main() {
 						if err != nil {
 							log.Println(err)
 						}
-					
-						go AsyncApproveChain(ctx,subscription,update.Message.From.ID,auth,passportCenter,session,userDatabase)
+
+						go AsyncApproveChain(ctx, subscription, update.Message.From.ID, auth, passportCenter, session, userDatabase)
 
 						updateDb.dialog_status = 4
 						userDatabase[update.Message.From.ID] = updateDb
-						
+
 					}
 				//	fallthrough // МЫ ЛЕД ПОД НОГАМИ МАЙОРА!
 				case 1:
@@ -212,7 +204,7 @@ func main() {
 						bot.Send(msg)
 						updateDb.dialog_status = 2
 						userDatabase[update.Message.From.ID] = updateDb
-						
+
 					}
 
 				case 2:
@@ -231,18 +223,18 @@ func main() {
 					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
 						var address_to_check_string = update.Message.Text
 						var address_to_check = common.HexToAddress(address_to_check_string)
-						tg_nickname,err := WhoIsAddress(session, address_to_check) 
+						tg_nickname, err := WhoIsAddress(session, address_to_check)
 						if err != nil {
 							log.Println("error with getting nickname associated with eth wallet, probably not registred yet")
 						}
-						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid,tg_nickname )
+						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, tg_nickname)
 						bot.Send(msg)
 						updateDb.dialog_status = 2
 						userDatabase[update.Message.From.ID] = updateDb
 
 					}
 
-				// 
+				//
 				case 4:
 					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
 						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].tgid, msgTemplates["await"])
@@ -250,7 +242,6 @@ func main() {
 						updateDb.dialog_status = 4
 						userDatabase[update.Message.From.ID] = updateDb
 					}
-
 
 				}
 			}
@@ -267,62 +258,59 @@ func loadEnv() {
 	}
 }
 
-func AsyncApproveChain(ctx context.Context,subscription event.Subscription, tgid int64, auth *bind.TransactOpts, passportCenter *passport.Passport, session *passport.PassportSession, userDatabase map[int64]user) {
-	EventLoop:
-						for {
-							select {
-							case <-ctx.Done():
-								{
-									subscription.Unsubscribe()
-									break EventLoop
-								}
-							case eventResult := <-ch_index:
-								{
-									fmt.Println("User tg_id:", eventResult.ApplyerTg)
-									fmt.Println("User wallet address:", eventResult.WalletAddress)
-									applyer_tg_string := fmt.Sprint(eventResult.ApplyerTg)
-									msg := tgbotapi.NewMessage(userDatabase[tgid].tgid, " your application have been recived "+applyer_tg_string)
-									bot.Send(msg)
-									ApprovePassport(auth, passportCenter, eventResult.WalletAddress)
-									subscriptionApproved, err := SubscribeForApprovals(session,ch_approved)
-									if err != nil {
-										log.Fatal(err)
-									}
-														ApproveLoop:
-															   for {
-																	select {
-																	case <-ctx.Done():
-																		{
-																			subscriptionApproved.Unsubscribe()
-																			break ApproveLoop
-																		}
-																	case eventResult2 := <-ch_approved:
-																		{
-																			fmt.Println("User tg_id:", eventResult2.ApplyerTg)
-																			fmt.Println("User wallet address:", eventResult2.WalletAddress)
-																			approved_tg_string := fmt.Sprint(eventResult2.ApplyerTg)
-																			if approved_tg_string == applyer_tg_string {
-																				msg = tgbotapi.NewMessage(userDatabase[tgid].tgid, " your application have been APPROVED "+approved_tg_string)
-																				bot.Send(msg)
-																				subscriptionApproved.Unsubscribe()
-																				break ApproveLoop
-																			}
-																			
-
-																			
-																		}
-																	}
-															   }		
-
-
-									subscription.Unsubscribe()
-									break EventLoop
-								}
-								}
+func AsyncApproveChain(ctx context.Context, subscription event.Subscription, tgid int64, auth *bind.TransactOpts, passportCenter *passport.Passport, session *passport.PassportSession, userDatabase map[int64]user) {
+EventLoop:
+	for {
+		select {
+		case <-ctx.Done():
+			{
+				subscription.Unsubscribe()
+				break EventLoop
+			}
+		case eventResult := <-ch_index:
+			{
+				fmt.Println("User tg_id:", eventResult.ApplyerTg)
+				fmt.Println("User wallet address:", eventResult.WalletAddress)
+				applyer_tg_string := fmt.Sprint(eventResult.ApplyerTg)
+				msg := tgbotapi.NewMessage(userDatabase[tgid].tgid, " your application have been recived "+applyer_tg_string)
+				bot.Send(msg)
+				ApprovePassport(auth, passportCenter, eventResult.WalletAddress)
+				subscriptionApproved, err := SubscribeForApprovals(session, ch_approved)
+				if err != nil {
+					log.Fatal(err)
+				}
+			ApproveLoop:
+				for {
+					select {
+					case <-ctx.Done():
+						{
+							subscriptionApproved.Unsubscribe()
+							break ApproveLoop
 						}
-						updateDb := userDatabase[tgid]
-						updateDb.dialog_status = 1
-						userDatabase[tgid] = updateDb
+					case eventResult2 := <-ch_approved:
+						{
+							fmt.Println("User tg_id:", eventResult2.ApplyerTg)
+							fmt.Println("User wallet address:", eventResult2.WalletAddress)
+							approved_tg_string := fmt.Sprint(eventResult2.ApplyerTg)
+							if approved_tg_string == applyer_tg_string {
+								msg = tgbotapi.NewMessage(userDatabase[tgid].tgid, " your application have been APPROVED "+approved_tg_string)
+								bot.Send(msg)
+								subscriptionApproved.Unsubscribe()
+								break ApproveLoop
+							}
+
+						}
+					}
+				}
+
+				subscription.Unsubscribe()
+				break EventLoop
+			}
+		}
+	}
+	updateDb := userDatabase[tgid]
+	updateDb.dialog_status = 1
+	userDatabase[tgid] = updateDb
 }
 
 // subscribing for Applications events. We use watchers without fast-forwarding past events
@@ -412,28 +400,27 @@ func DeclinePassport(auth *bind.TransactOpts, pc *passport.Passport, user_addres
 	fmt.Printf("transaction for DECLINING passport sent! Please wait for tx %s to be confirmed. \n", tx_to_approve.Hash().Hex())
 }
 
-
 // allow bot to get tg nickname associated with this eth wallet
-func WhoIsAddress(session *passport.PassportSession,address_to_check common.Address) (string,error){
+func WhoIsAddress(session *passport.PassportSession, address_to_check common.Address) (string, error) {
 	passport, err := session.GetPassportByAddress(address_to_check)
 	if err != nil {
 		log.Println("cant get passport associated with this address, possible it's not registred yet: ")
 		log.Print(err)
-		 return "error",err
+		return "error", err
 	}
 	nickname := passport.UserName
-	return nickname,nil
+	return nickname, nil
 
 }
 
-func IsAlreadyRegistred(session *passport.PassportSession, user_id int64) (bool) {
+func IsAlreadyRegistred(session *passport.PassportSession, user_id int64) bool {
 	//GetPassportWalletByID
 	passport_address, err := session.GetPassportWalletByID(user_id)
 	if err != nil {
 		return false
 	}
 	log.Println("check that user with this id:", user_id)
-	log.Println("have associated wallet address:",passport_address)
+	log.Println("have associated wallet address:", passport_address)
 	if passport_address == common.HexToAddress("0x0000000000000000000000000000000000000000") {
 		log.Println("passport is null, user is not registred")
 		return false
@@ -443,14 +430,14 @@ func IsAlreadyRegistred(session *passport.PassportSession, user_id int64) (bool)
 }
 
 // generate link to trust page
-func TrustUserLink(tgid_string string, friend_tg_id string, friend_username string) (string) {
+func TrustUserLink(tgid_string string, friend_tg_id string, friend_username string) string {
 	//http://localhost:3000/trust?user_tg_id=1337&friend_tg_id=1997&friend_user_name=sbekket
 	loadEnv()
 	baseURL_ := myenv["BASEURL"]
 	trustURL := "/trust"
 	tg_id_query_trust := "?user_tg_id="
-//	tg_username_query_trust := "&user_tg_name="
-	to_id_query:= "&friend_tg_id="
+	//	tg_username_query_trust := "&user_tg_name="
+	to_id_query := "&friend_tg_id="
 	to_username_query := "&friend_user_name="
 	link := baseURL_ + trustURL + tg_id_query_trust + tgid_string + to_id_query + friend_tg_id + to_username_query + "@" + friend_username
 	return link
